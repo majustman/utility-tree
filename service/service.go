@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/majustman/utility-tree/tree"
+	"strings"
 )
 
 func Run(address string, filesParam bool) error {
@@ -10,37 +11,43 @@ func Run(address string, filesParam bool) error {
 	if err != nil {
 		return err
 	}
-	printTree(t, filesParam, 0)
+	var b strings.Builder
+	writeTreeIntoBuilder(t, filesParam, 0, &b)
+	fmt.Println(b.String())
 	return nil
 }
 
-func printTree(t *tree.Tree, fileParam bool, level int) {
-	if level == 0 {	fmt.Println(t.Name)	}
-	if fileParam { printFiles(t.Files, level, len(t.Dirs)) }
+func writeTreeIntoBuilder(t *tree.Tree, fileParam bool, level int, b *strings.Builder) {
+	if level == 0 {	fmt.Fprintln(b, t.Name)	}
+	if fileParam {
+		writeFiles(t.Files, level, len(t.Dirs), b)
+	}
 	for i, d := range t.Dirs {
-		printSpace(level)
+		writeSpace(level, b)
 		if i != len(t.Dirs)-1 {
-			fmt.Printf("├── %v\n", d.Name)
+			fmt.Fprintf(b,"├── %v\n", d.Name)
 		} else {
-			fmt.Printf("└── %v\n", d.Name)
+			fmt.Fprintf(b,"└── %v\n", d.Name)
 		}
-		printTree(d, fileParam, level+1)
+		writeTreeIntoBuilder(d, fileParam, level+1, b)
 	}
 }
 
-func printSpace(level int) {
+func writeSpace(level int, b *strings.Builder) {
+	b.Grow(level*4)
 	for i := 1; i <= level; i++ {
-		fmt.Print("│   ")
+		fmt.Fprint(b,"│   ")
 	}
 }
 
-func printFiles(files []string, level int, lenDir int) {
+func writeFiles(files []string, level int, lenDir int, b *strings.Builder) {
 	for i, f := range files {
-		printSpace(level)
+		writeSpace(level, b)
+		b.Grow(len(f)+4)
 		if i != len(files)-1 || lenDir > 0 {
-			fmt.Printf("├── %v\n", f)
+			fmt.Fprintf(b,"├── %v\n", f)
 		} else {
-			fmt.Printf("└── %v\n", f)
+			fmt.Fprintf(b,"└── %v\n", f)
 		}
 	}
 }
