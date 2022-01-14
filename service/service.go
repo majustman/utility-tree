@@ -12,37 +12,50 @@ func Run(address string, filesParam bool) error {
 		return err
 	}
 	var b strings.Builder
-	writeTreeIntoBuilder(t, filesParam, 0, &b)
+	writeTreeIntoBuilder(&b, t, filesParam, 0, []bool{true})
 	fmt.Println(b.String())
 	return nil
 }
 
-func writeTreeIntoBuilder(t *tree.Tree, fileParam bool, level int, b *strings.Builder) {
+// The parameter levelSpaces is need to define what we should print on each level: just a spaces
+// or '|'
+func writeTreeIntoBuilder(b *strings.Builder, t *tree.Tree, fileParam bool, level int, levelSpaces []bool) {
 	if level == 0 {	fmt.Fprintln(b, t.Name)	}
 	if fileParam {
-		writeFiles(t.Files, level, len(t.Dirs), b)
+		writeFiles(b, t.Files, level, len(t.Dirs), levelSpaces)
 	}
 	for i, d := range t.Dirs {
-		writeSpace(level, b)
+		writeSpace(b, level, levelSpaces)
+		newLevelSpaces := levelSpaces
 		if i != len(t.Dirs)-1 {
 			fmt.Fprintf(b,"├── %v\n", d.Name)
+			newLevelSpaces = append(newLevelSpaces, true)
 		} else {
 			fmt.Fprintf(b,"└── %v\n", d.Name)
+			newLevelSpaces = append(newLevelSpaces, false)
 		}
-		writeTreeIntoBuilder(d, fileParam, level+1, b)
+		writeTreeIntoBuilder(b, d, fileParam, level+1, newLevelSpaces)
 	}
 }
 
-func writeSpace(level int, b *strings.Builder) {
+// The parameter levelSpaces is need to define what we should print on each level: just a spaces
+// or '|'
+func writeSpace(b *strings.Builder, level int, levelSpaces []bool) {
 	b.Grow(level*4)
 	for i := 1; i <= level; i++ {
-		fmt.Fprint(b,"│   ")
+		if levelSpaces[i] {
+			fmt.Fprint(b,"│   ")
+		} else {
+			fmt.Fprint(b,"    ")
+		}
 	}
 }
 
-func writeFiles(files []string, level int, lenDir int, b *strings.Builder) {
+// The parameter levelSpaces is need to define what we should print on each level: just a spaces
+// or '|'
+func writeFiles(b *strings.Builder, files []string, level int, lenDir int, levelSpaces []bool) {
 	for i, f := range files {
-		writeSpace(level, b)
+		writeSpace(b, level, levelSpaces)
 		b.Grow(len(f)+4)
 		if i != len(files)-1 || lenDir > 0 {
 			fmt.Fprintf(b,"├── %v\n", f)
